@@ -10,26 +10,75 @@ namespace Lab1_Polynomial2
     {
         public Node head;
         private int size;
-        private int[] coefs;
+        private double[] coefs;
         private int[] powers;
+        public void CheckAndRemoveZeroCoefficient()
+        {
+            Node current = head;
+            Node previous = null;
 
-        public int[] Coefs { get { return coefs; } set { coefs = value; } }
+            int newCoefsSize = 0;
+
+            while (current != null)
+            {
+                if (current.Coef == 0)
+                {
+                    if (previous != null)
+                    {
+                        previous.PointerNext = current.PointerNext;
+                        current = current.PointerNext;
+                    }
+                    else
+                    {
+                        head = current.PointerNext;
+                        current = head;
+                    }
+                }
+                else
+                {
+                    newCoefsSize++;
+                    previous = current;
+                    current = current.PointerNext;
+                }
+            }
+
+            double[] newCoefs = new double[newCoefsSize];
+            int[] newPowers = new int[newCoefsSize];
+
+            current = head;
+            int index = 0;
+
+            while (current != null)
+            {
+                newCoefs[index] = current.Coef;
+                newPowers[index] = current.Power;
+                index++;
+
+                current = current.PointerNext;
+            }
+
+            this.Coefs = newCoefs;
+            this.Powers = newPowers;
+        }
+        public double[] Coefs { get { return coefs; } set { coefs = value; } }
         public int[] Powers  { get { return powers; } set { powers = value; } }
         public int Size { get { return size; } set { size = value; } }
 
         public Polynomial()
         {
             head = null;
+            this.size = 0;
         }
 
-        public Polynomial(int[] coefs, int[] powers)
+        public Polynomial(double[] coefs, int[] powers)
         {
             for (int i = 0; i < coefs.Length; i++)
             {
                 if (head == null)
                 {
                     AddNode(coefs[i], powers[i]);
-                    this.Coefs = coefs;
+                    this.coefs = coefs;
+                    this.powers = powers;
 
                 }
                 else
@@ -39,12 +88,13 @@ namespace Lab1_Polynomial2
                     {
                         current = current.PointerNext;
                     }
+                    this.coefs = coefs;
+                    this.powers = powers;
                     AddNode(coefs[i], powers[i]);
                 }
             }
         }
-
-        public Polynomial(Polynomial p)//Object(B); Object == B;
+        public Polynomial(Polynomial p)
         {
             if (p == null)
             {
@@ -59,16 +109,18 @@ namespace Lab1_Polynomial2
                     current = current.PointerNext;
                 }
             }
+
+            this.powers = p.Powers;
+            this.coefs = p.Coefs;
         }
 
         public void AddNode(double coef, int power)
         {
             Node newNode = new Node(coef, power);
-
             if (head == null)
             {
                 head = newNode;
-                Size = 1;
+                this.size = 1;
             }
             else
             {
@@ -78,29 +130,9 @@ namespace Lab1_Polynomial2
                     current = current.PointerNext;
                 }
                 current.PointerNext = newNode;
-                Size++;
+                this.size++;
             }
         }
-        public static void Bubble_Sort(int[] anArray)
-        {
-            for (int i = 0; i < anArray.Length; i++)
-            {
-                for (int j = 0; j < anArray.Length - 1 - i; j++)
-                {
-                    if (anArray[j] > anArray[j + 1])
-                    {
-                        Swap(ref anArray[j], ref anArray[j + 1]);
-                    }
-                }
-            }
-        }
-        public static void Swap(ref int aFirstArg, ref int aSecondArg)
-        {
-            int tmpParam = aFirstArg;
-            aFirstArg = aSecondArg;
-            aSecondArg = tmpParam;
-        }
-
         public double CalcPol(double value)
         {
             double res = 0;
@@ -114,164 +146,310 @@ namespace Lab1_Polynomial2
 
             return res;
         }
-
         public Polynomial MultNum(double number)
         {
-            Node current = head;
-            while (current != null)
+            Polynomial resultPolynomial = new Polynomial();
+
+            double[] newCoefs = new double[this.Size];
+            int[] newPowers = new int[this.Size];
+
+            Node currentNode = this.head;
+
+            int index = 0;
+            while (currentNode != null)
             {
-                current.Coef *= number;
-                current = current.PointerNext;
+                double newCoef = currentNode.Coef * number;
+
+                resultPolynomial.AddNode(newCoef, currentNode.Power);
+
+                newCoefs[index] = newCoef;
+                newPowers[index] = currentNode.Power;
+
+                currentNode = currentNode.PointerNext;
+                index++;
             }
+
+
+            resultPolynomial.Coefs = newCoefs; 
+            resultPolynomial.Powers = newPowers; 
+            resultPolynomial.CheckAndRemoveZeroCoefficient();
+            return resultPolynomial;
+        }
+        public Polynomial SubNum(double number)
+        {
+            int indexForConstant = -1;
+
+            for (int i = 0; i < this.powers.Length; i++)
+            {
+                if (this.powers[i] == 0)
+                {
+                    this.coefs[i] -= number;
+                    indexForConstant = i;
+                    break;
+                }
+            }
+            if (indexForConstant == -1)
+            {
+                Array.Resize(ref this.coefs, this.coefs.Length + 1);
+                Array.Resize(ref this.powers, this.powers.Length + 1);
+
+                this.coefs[this.coefs.Length - 1] = -number;
+                this.powers[this.powers.Length - 1] = 0;
+            }
+            else if (this.coefs[indexForConstant] == 0)
+            {
+                double[] newCoefs = new double[this.coefs.Length - 1];
+                int[] newPowers = new int[this.powers.Length - 1];
+
+                for (int i = 0, j = 0; i < this.coefs.Length; i++)
+                {
+                    if (i != indexForConstant)
+                    {
+                        newCoefs[j] = this.coefs[i];
+                        newPowers[j] = this.powers[i];
+                        j++;
+                    }
+                }
+
+                this.coefs = newCoefs;
+                this.powers = newPowers;
+            }
+
             return this;
         }
 
-        public Polynomial SubNum(double number)
-        {
-            Node current = head;
-            var result = new Polynomial(this);
-
-            while (current != null)
-            { 
-                if (this.head.Power == 0)
-                {
-                    current.Coef = this.head.Coef - number;
-                    break;
-                }
-
-                current = current.PointerNext;
-            }
-
-            if (current == null)
-            {
-                current.Coef = -number;
-                AddNode(current.Coef, 0);
-            }
-            return result;
-        }
         public Polynomial SumNum(double number)
         {
-            Node current = head;
-            var result = new Polynomial(this);
+            bool constantTermFound = false;
+            int newSize = this.Size;
 
-            while (current != null)
+            for (int i = 0; i < this.Size; i++)
             {
-                if (this.head.Power == 0)
+                if (this.powers[i] == 0)
                 {
-                    current.Coef = this.head.Coef + number;
+                    this.coefs[i] += number;
+                    constantTermFound = true;
                     break;
                 }
-
-                current = current.PointerNext;
             }
 
-            if (current == null)
+            if (!constantTermFound)
             {
-                current.Coef = number;
-                AddNode(current.Coef, 0);
+                newSize += 1;
+
+                double[] newCoefs = new double[newSize];
+                int[] newPowers = new int[newSize];
+
+                for (int i = 0; i < this.Size; i++)
+                {
+                    newCoefs[i] = this.coefs[i];
+                    newPowers[i] = this.powers[i];
+                }
+
+                newCoefs[newSize - 1] = number;
+                newPowers[newSize - 1] = 0;
+
+                this.coefs = newCoefs;
+                this.powers = newPowers;
             }
-            return result;
+
+            return new Polynomial(this.coefs, this.powers);
         }
-        public Polynomial SubPol(Polynomial p) {
+
+        public Polynomial SubPol(Polynomial p)
+        {
             if (p == null)
             {
                 throw new NullReferenceException();
             }
-            else
+
+            var result = new Polynomial();
+
+            Node currentThisNode = this.head;
+            Node currentSubNode = p.head;
+
+            while (currentThisNode != null || currentSubNode != null)
             {
-
-                var result = new Polynomial();
-                Node currentThisNode = this.head;
-                Node currentSubNode = p.head;
-
-                while (currentThisNode != null)
+                if (currentSubNode == null || (currentThisNode != null && currentThisNode.Power > currentSubNode.Power))
                 {
-                    if (currentSubNode != null && currentThisNode.Power == currentSubNode.Power)
-                    {
-                        result.AddNode(currentThisNode.Coef - currentSubNode.Coef, currentThisNode.Power);
-                        currentSubNode = currentSubNode.PointerNext;
-                    }
-                    else
-                    {
-                        result.AddNode(currentThisNode.Coef, currentThisNode.Power);
-                    }
-
+                    result.AddNode(currentThisNode.Coef, currentThisNode.Power);
                     currentThisNode = currentThisNode.PointerNext;
                 }
-
-                while (currentSubNode != null)
+                else if (currentThisNode == null || (currentSubNode != null && currentThisNode.Power < currentSubNode.Power))
                 {
                     result.AddNode(-currentSubNode.Coef, currentSubNode.Power);
                     currentSubNode = currentSubNode.PointerNext;
                 }
-
-                return result;
+                else
+                {
+                    double coefDifference = currentThisNode.Coef - currentSubNode.Coef;
+                    if (coefDifference != 0)
+                    {
+                        result.AddNode(coefDifference, currentThisNode.Power);
+                    }
+                    currentThisNode = currentThisNode.PointerNext;
+                    currentSubNode = currentSubNode.PointerNext;
+                }
             }
+
+            result.CheckAndRemoveZeroCoefficient();
+            return result;
         }
+
         public Polynomial SumPol(Polynomial p)
         {
             if (p == null)
             {
                 throw new NullReferenceException();
             }
-            else { 
-                var result = new Polynomial();
-                Node currentThisNode = this.head;
-                Node currentAddNode = p.head;
 
-                while (currentThisNode != null || currentAddNode != null)
+            int maxSize = this.size + p.size; // максимальний можливий розмір
+            double[] tempCoefs = new double[maxSize];
+            int[] tempPowers = new int[maxSize];
+            int currentIndex = 0;
+
+            Node currentThisNode = this.head;
+            Node currentAddNode = p.head;
+
+            while (currentThisNode != null || currentAddNode != null)
+            {
+                int thisPower = (currentThisNode != null) ? currentThisNode.Power : int.MinValue;
+                int addPower = (currentAddNode != null) ? currentAddNode.Power : int.MinValue;
+
+                if (thisPower == addPower)
                 {
-                    if (currentThisNode != null && currentAddNode != null && currentThisNode.Power == currentAddNode.Power)
-                    {
-                        result.AddNode(currentThisNode.Coef + currentAddNode.Coef, currentThisNode.Power);
-                        currentThisNode = currentThisNode.PointerNext;
-                        currentAddNode = currentAddNode.PointerNext;
-                    }
-                    else if (currentThisNode != null && (currentAddNode == null || currentThisNode.Power < currentAddNode.Power))
-                    {
-                        result.AddNode(currentThisNode.Coef, currentThisNode.Power);
-                        currentThisNode = currentThisNode.PointerNext;
-                    }
-                    else if (currentAddNode != null)
-                    {
-                        result.AddNode(currentAddNode.Coef, currentAddNode.Power);
-                        currentAddNode = currentAddNode.PointerNext;
-                    }
+                    tempCoefs[currentIndex] = currentThisNode.Coef + currentAddNode.Coef;
+                    tempPowers[currentIndex] = thisPower;
+                    currentIndex++;
+
+                    currentThisNode = currentThisNode.PointerNext;
+                    currentAddNode = currentAddNode.PointerNext;
                 }
+                else if (thisPower > addPower || currentAddNode == null)
+                {
+                    tempCoefs[currentIndex] = currentThisNode.Coef;
+                    tempPowers[currentIndex] = thisPower;
+                    currentIndex++;
 
-                return result;
+                    currentThisNode = currentThisNode.PointerNext;
+                }
+                else
+                {
+                    tempCoefs[currentIndex] = currentAddNode.Coef;
+                    tempPowers[currentIndex] = addPower;
+                    currentIndex++;
+
+                    currentAddNode = currentAddNode.PointerNext;
+                }
             }
-        }
 
-        public Polynomial Multi(Polynomial polynom)
+            Array.Resize(ref tempCoefs, currentIndex);
+            Array.Resize(ref tempPowers, currentIndex);
+
+            return new Polynomial(tempCoefs, tempPowers);
+        }
+        public Polynomial Multi(Polynomial second)
         {
-            throw new NotImplementedException();
+            if (second == null)
+            {
+                throw new ArgumentNullException(nameof(second));
+            }
+
+            double[] newCoefs = new double[this.size + second.size];
+            int[] newPowers = new int[this.size + second.size];
+            int currentIndex = 0;
+
+            Node currentThisNode = this.head;
+            while (currentThisNode != null)
+            {
+                Node currentSecondNode = second.head;
+                while (currentSecondNode != null)
+                {
+                    double coef = currentThisNode.Coef * currentSecondNode.Coef;
+                    int power = currentThisNode.Power + currentSecondNode.Power;
+
+                    if (coef != 0)
+                    {
+                        int existingIndex = Array.IndexOf(newPowers, power, 0, currentIndex);
+                        if (existingIndex != -1)
+                        {
+                            newCoefs[existingIndex] += coef;
+                        }
+                        else
+                        {
+                            newCoefs[currentIndex] = coef;
+                            newPowers[currentIndex] = power;
+                            currentIndex++;
+                        }
+                    }
+
+                    currentSecondNode = currentSecondNode.PointerNext;
+                }
+                currentThisNode = currentThisNode.PointerNext;
+            }
+            Array.Resize(ref newCoefs, currentIndex);
+            Array.Resize(ref newPowers, currentIndex);
+
+            return new Polynomial(newCoefs, newPowers);
         }
 
         public override string ToString()
         {
-            string result = null;
-            int dim = 0;
-            foreach (double coef in Coefs)
+            if (head == null || (coefs.Length == 1 && coefs[0] == 0)) return "0";
+            if (coefs == null || powers == null) return "Error: Coefficients or Powers not initialized!";
+
+            StringBuilder result = new StringBuilder();
+            bool firstTerm = true;
+
+            for (int i = 0; i < coefs.Length; i++)
             {
-                result += coef.ToString() + "x^" + dim.ToString() + " + ";
-                dim++;
+                if (coefs[i] == 0) continue;
+
+                if (!firstTerm)
+                {
+                    if (coefs[i] > 0) result.Append(" + ");
+                    else if (coefs[i] < 0) result.Append(" - ");
+                }
+                else
+                {
+                    firstTerm = false;
+                }
+
+                if (powers[i] != 0 && Math.Abs(coefs[i]) != 1) result.Append(Math.Abs(coefs[i]).ToString());
+                else if (powers[i] == 0) result.Append(coefs[i].ToString());
+
+                if (powers[i] != 0) result.Append("x^" + powers[i].ToString());
             }
-            result = result.Remove(result.Length - 3, 3);
-            return result;
+
+            if (result.Length == 0) return "0";
+            return result.ToString();
         }
 
         public override bool Equals(object obj)
         {
-            return obj is Polynomial p1 && p1.Size == Size && p1.Coefs.SequenceEqual(Coefs);
+            if (obj == null || !(obj is Polynomial))
+                return false;
+            Node current1 = head;
+            Node current2 = ((Polynomial)obj).head;
+
+            while (current1 != null && current2 != null)
+            {
+                if (current1.Coef != current2.Coef || current1.Power != current2.Power)
+                {
+                    return false;
+                }
+
+                current1 = current1.PointerNext;
+                current2 = current2.PointerNext;
+            }
+            return current1 == null && current2 == null;
 
         }
-
         public override int GetHashCode()
         {
             int hashCode = -1837172754;
             hashCode = hashCode * -1521134295 + Size.GetHashCode();
-            hashCode = hashCode * -1521134295 + EqualityComparer<int[]>.Default.GetHashCode(Coefs);
+            hashCode = hashCode * -1521134295 + Coefs.Aggregate(0, (acc, val) => acc * -1521134295 + val.GetHashCode());
             return hashCode;
         }
     }

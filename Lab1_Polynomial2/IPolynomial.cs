@@ -15,6 +15,7 @@ namespace Lab1_Polynomial2
         Polynomial MultNum(double number);
         Polynomial Multi(Polynomial polynom);
         double CalcPol(double value);
+        //void CombineLikeTerms();
 
     }
 }
